@@ -1,0 +1,1729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PROJECT ALERT</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    <style>
+     :root {
+            --primary-color: #2c6fbb;
+            --secondary-color: #4caf50;
+            --accent-color: #ff9800;
+            --danger-color: #f44336;
+            --warning-color: #ffc107;
+            --info-color: #2196f3;
+            --light-bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --text-light: #6c757d;
+            --border-color: #e0e0e0;
+            --sidebar-width: 280px;
+            --header-height: 70px;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.12);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light-bg);
+            color: var(--text-color);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Login Container */
+        #login-container {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        
+        .login-card {
+            background: var(--card-bg);
+            width: 450px;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .login-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+        }
+        
+        .login-header {
+            margin-bottom: 28px;
+            text-align: center;
+        }
+        
+        .logo {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .logo-icon {
+            font-size: 36px;
+            color: var(--primary-color);
+            margin-right: 12px;
+        }
+        
+        .logo-text {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .login-header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 28px;
+            color: var(--text-light);
+        }
+        
+        .login-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        .login-tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-light);
+            transition: all 0.3s;
+        }
+        
+        .login-tab.active {
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .form-control {
+            width: 100%;
+            height: 50px;
+            background: var(--light-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-color);
+            padding: 16px 20px 16px 45px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(44, 111, 187, 0.1);
+        }
+        
+        .form-icon {
+            position: absolute;
+            left: 15px;
+            top: 15px;
+            color: var(--text-light);
+        }
+        
+        .btn-login {
+            width: 100%;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            padding: 16px;
+            margin-top: 24px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .btn-login:hover {
+            background: #235a9e;
+        }
+        
+        .login-help {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 16px;
+            font-size: 14px;
+            color: var(--text-light);
+        }
+        
+        .login-help a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        .login-help a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Alert message */
+        .alert-message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-size: 14px;
+        }
+        
+        .alert-error {
+            background-color: #ffebee;
+            color: #d32f2f;
+            border-left: 4px solid #f44336;
+        }
+        
+        /* Main application */
+        #app {
+            display: none;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar */
+        #sidebar {
+            position: fixed;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: linear-gradient(to bottom, var(--primary-color), #3a85d4);
+            padding: 20px 0;
+            z-index: 100;
+            overflow-y: auto;
+            box-shadow: var(--shadow);
+        }
+        
+        .sidebar-header {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            color: white;
+        }
+        
+        .sidebar-logo {
+            font-size: 24px;
+            color: white;
+            margin-right: 10px;
+        }
+        
+        .sidebar-header h3 {
+            color: white;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .sidebar-menu li {
+            margin-bottom: 5px;
+        }
+        
+        .sidebar-menu a {
+            display: block;
+            padding: 12px 20px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: color 0.3s, background 0.3s;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-menu a:hover,
+        .sidebar-menu a.active {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            border-left: 3px solid white;
+        }
+        
+        .sidebar-menu i {
+            margin-right: 12px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* Main content */
+        #content {
+            margin-left: var(--sidebar-width);
+            padding: 25px;
+            width: calc(100% - var(--sidebar-width));
+        }
+        
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .content-header h2 {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin: 0;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            background: var(--card-bg);
+            padding: 8px 16px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+        }
+        
+        .user-info img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 12px;
+            border: 2px solid var(--primary-color);
+        }
+        
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 25px;
+            box-shadow: var(--shadow);
+            border: none;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+        }
+        
+        .card-header {
+            padding: 18px 25px;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            background: var(--card-bg);
+        }
+        
+        .card-header i {
+            margin-right: 12px;
+            color: var(--primary-color);
+        }
+        
+        .card-body {
+            padding: 25px;
+        }
+        
+        /* Tables */
+        .table {
+            color: var(--text-color);
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        
+        .table th {
+            border-top: none;
+            border-bottom: 2px solid var(--border-color);
+            font-weight: 600;
+            padding: 12px 15px;
+            background: #f8f9fa;
+        }
+        
+        .table td {
+            border-top: 1px solid var(--border-color);
+            vertical-align: middle;
+            padding: 12px 15px;
+        }
+        
+        .table tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        /* Dashboard stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+        
+        .stat-card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: var(--shadow);
+            border-top: 4px solid var(--primary-color);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+        }
+        
+        .stat-card i {
+            font-size: 32px;
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 50%;
+            background: rgba(44, 111, 187, 0.1);
+        }
+        
+        .stat-card.fire { border-top-color: #f44336; }
+        .stat-card.fire i { color: #f44336; background: rgba(244, 67, 54, 0.1); }
+        
+        .stat-card.flood { border-top-color: #2196f3; }
+        .stat-card.flood i { color: #2196f3; background: rgba(33, 150, 243, 0.1); }
+        
+        .stat-card.landslide { border-top-color: #ff9800; }
+        .stat-card.landslide i { color: #ff9800; background: rgba(255, 152, 0, 0.1); }
+        
+        .stat-card.accident { border-top-color: #9c27b0; }
+        .stat-card.accident i { color: #9c27b0; background: rgba(156, 39, 176, 0.1); }
+        
+        .stat-card.crime { border-top-color: #673ab7; }
+        .stat-card.crime i { color: #673ab7; background: rgba(103, 58, 183, 0.1); }
+        
+        .stat-card h3 {
+            font-size: 32px;
+            margin: 10px 0;
+            color: var(--text-color);
+        }
+        
+        .stat-card p {
+            color: var(--text-light);
+            font-weight: 500;
+        }
+        
+        /* Image gallery */
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .gallery-item {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .gallery-item:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+        }
+        
+        .gallery-item img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+        
+        .gallery-item:hover img {
+            transform: scale(1.05);
+        }
+        
+        .gallery-info {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 12px;
+            color: white;
+        }
+        
+        /* Settings */
+        .settings-group {
+            margin-bottom: 30px;
+        }
+        
+        .settings-group h4 {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            color: var(--primary-color);
+        }
+        
+        .settings-group h4 i {
+            margin-right: 12px;
+            color: var(--primary-color);
+        }
+        
+        /* Developers section */
+        .developers {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+        }
+        
+        .developer-card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: var(--shadow);
+        }
+        
+        .developer-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+        }
+        
+        .developer-card img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 20px;
+            border: 3px solid var(--primary-color);
+        }
+        
+        .developer-card h4 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+        
+        .developer-card p {
+            color: var(--text-light);
+            margin-bottom: 5px;
+        }
+        
+        .social-icons {
+            margin-top: 15px;
+        }
+        
+        .social-icons i {
+            margin: 0 8px;
+            color: var(--primary-color);
+            font-size: 18px;
+            transition: color 0.3s;
+        }
+        
+        .social-icons i:hover {
+            color: var(--accent-color);
+        }
+        
+        /* Alert badges */
+        .alert-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 5px;
+            color: white;
+        }
+        
+        .badge-fire {
+            background-color: #f44336;
+        }
+        
+        .badge-flood {
+            background-color: #2196f3;
+        }
+        
+        .badge-landslide {
+            background-color: #ff9800;
+        }
+        
+        .badge-accident {
+            background-color: #9c27b0;
+        }
+        
+        .badge-crime {
+            background-color: #673ab7;
+        }
+        
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-light);
+        }
+        
+        .empty-state i {
+            font-size: 60px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+            color: var(--primary-color);
+        }
+        
+        .empty-state p {
+            font-size: 18px;
+        }
+        
+        /* Content sections */
+        .content-section {
+            display: none;
+        }
+        
+        .content-section.active {
+            display: block;
+        }
+        
+        /* Buttons */
+        .btn {
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: var(--primary-color);
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background: #235a9e;
+            transform: translateY(-2px);
+        }
+        
+        /* Form elements */
+        .form-check-input:checked {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        /* Responsive */
+        @media (max-width: 992px) {
+            #sidebar {
+                width: 70px;
+            }
+            
+            .sidebar-menu span {
+                display: none;
+            }
+            
+            .sidebar-menu i {
+                margin-right: 0;
+                font-size: 20px;
+            }
+            
+            .sidebar-header h3 {
+                display: none;
+            }
+            
+            .sidebar-header {
+                justify-content: center;
+            }
+            
+            #content {
+                margin-left: 70px;
+                width: calc(100% - 70px);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .login-card {
+                width: 90%;
+                padding: 30px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .content-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .user-info {
+                margin-top: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Container -->
+    <div id="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="logo">
+                    <i class="fas fa-shield-alt logo-icon"></i>
+                    <span class="logo-text">ALERT</span>
+                </div>
+                <h1>AUTOMATIC LIVE EMERGENCY RESPONSE TECHNOLOGY USING YOLO ALGORITHM</h1>
+                <div class="login-tabs">
+                    <div class="login-tab active" id="login-tab">Sign In</div>
+                    <div class="login-tab" id="signup-tab">Sign Up</div>
+                </div>
+            </div>
+            
+            <div id="login-alert" class="alert-message alert-error"></div>
+            
+            <form id="login-form">
+                <div class="form-group">
+                    <i class="fas fa-user form-icon"></i>
+                    <input type="email" class="form-control" id="login-email" placeholder="Email address" required>
+                </div>
+                <div class="form-group">
+                    <i class="fas fa-lock form-icon"></i>
+                    <input type="password" class="form-control" id="login-password" placeholder="Password" required>
+                </div>
+                <div class="form-group">
+                    <i class="fas fa-users form-icon"></i>
+                    <select class="form-control" id="user-type">
+                        <option value="mdrrmo">MDRRMO Account</option>
+                        <option value="police">Police Account</option>
+                        <option value="admin">Administrator</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-login">Sign In</button>
+                
+                <div class="login-help">
+                    <label>
+                        <input type="checkbox"> Remember me
+                    </label>
+                    <a href="#" id="forgot-password">Need help?</a>
+                </div>
+            </form>
+            
+            <form id="signup-form" style="display: none;">
+                <div class="form-group">
+                    <i class="fas fa-id-card form-icon"></i>
+                    <input type="text" class="form-control" id="signup-name" placeholder="Full Name" required>
+                </div>
+                <div class="form-group">
+                    <i class="fas fa-envelope form-icon"></i>
+                    <input type="email" class="form-control" id="signup-email" placeholder="Email" required>
+                </div>
+                <div class="form-group">
+                    <i class="fas fa-lock form-icon"></i>
+                    <input type="password" class="form-control" id="signup-password" placeholder="Password" required>
+                </div>
+                <div class="form-group">
+                    <i class="fas fa-phone form-icon"></i>
+                    <input type="tel" class="form-control" id="signup-phone" placeholder="Phone Number" required>
+                </div>
+                <div class="form-group">
+                    <i class="fas fa-users form-icon"></i>
+                    <select class="form-control" id="signup-user-type">
+                        <option value="mdrrmo">MDRRMO Account</option>
+                        <option value="police">Police Account</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-login">Sign Up</button>
+            </form>
+            
+            <div id="forgot-password-form" style="display: none;">
+                <h3><i class="fas fa-key"></i> Reset Password</h3>
+                <p>Enter your email address and we'll send you instructions to reset your password.</p>
+                <div class="form-group">
+                    <i class="fas fa-envelope form-icon"></i>
+                    <input type="email" class="form-control" placeholder="Email" required>
+                </div>
+                <button class="btn-login">Reset Password</button>
+                <div class="login-help">
+                    <a href="#" id="back-to-login">Back to login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Application -->
+    <div id="app">
+        <!-- Sidebar -->
+        <div id="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-shield-alt sidebar-logo"></i>
+                <h3>ALERT SYSTEM</h3>
+            </div>
+            
+            <ul class="sidebar-menu">
+                <!-- MDRRMO Menu -->
+                <li class="mdrrmo-item"><a href="#dashboard" class="active" data-section="dashboard"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
+                <li class="mdrrmo-item"><a href="#disaster-alerts" data-section="disaster-alerts"><i class="fas fa-bell"></i> <span>Disaster Alerts</span></a></li>
+                <li class="mdrrmo-item"><a href="#accident-alerts" data-section="accident-alerts"><i class="fas fa-car-crash"></i> <span>Accident Alerts</span></a></li>
+                <li class="mdrrmo-item"><a href="#images" data-section="images"><i class="fas fa-images"></i> <span>Images</span></a></li>
+                <li class="mdrrmo-item"><a href="#alert-summary" data-section="alert-summary"><i class="fas fa-chart-bar"></i> <span>Alert Summary</span></a></li>
+                <li class="mdrrmo-item"><a href="#user-settings" data-section="user-settings"><i class="fas fa-cog"></i> <span>User Settings</span></a></li>
+                
+                <!-- Police Menu -->
+                <li class="police-item" style="display: none;"><a href="#dashboard" class="active" data-section="dashboard"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
+                <li class="police-item" style="display: none;"><a href="#accident-alerts" data-section="accident-alerts"><i class="fas fa-car-crash"></i> <span>Accident Alerts</span></a></li>
+                <li class="police-item" style="display: none;"><a href="#crime-alerts" data-section="crime-alerts"><i class="fas fa-shield-alt"></i> <span>Crime Alerts</span></a></li>
+                <li class="police-item" style="display: none;"><a href="#images" data-section="images"><i class="fas fa-images"></i> <span>Images</span></a></li>
+                <li class="police-item" style="display: none;"><a href="#alert-summary" data-section="alert-summary"><i class="fas fa-chart-bar"></i> <span>Alert Summary</span></a></li>
+                <li class="police-item" style="display: none;"><a href="#user-settings" data-section="user-settings"><i class="fas fa-cog"></i> <span>User Settings</span></a></li>
+                
+                <!-- Admin Menu -->
+                <li class="admin-item" style="display: none;"><a href="#dashboard" class="active" data-section="dashboard"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
+                <li class="admin-item" style="display: none;"><a href="#camera-settings" data-section="camera-settings"><i class="fas fa-camera"></i> <span>Camera Settings</span></a></li>
+                <li class="admin-item" style="display: none;"><a href="#all-alerts" data-section="all-alerts"><i class="fas fa-bell"></i> <span>All Alerts</span></a></li>
+                <li class="admin-item" style="display: none;"><a href="#images" data-section="images"><i class="fas fa-images"></i> <span>Images</span></a></li>
+                <li class="admin-item" style="display: none;"><a href="#system-settings" data-section="system-settings"><i class="fas fa-cog"></i> <span>System Settings</span></a></li>
+                
+                <!-- Common Menu Items -->
+                <li><a href="#developers" data-section="developers"><i class="fas fa-info-circle"></i> <span>Developers</span></a></li>
+                <li><a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
+            </ul>
+        </div>
+        
+        <!-- Main Content -->
+        <div id="content">
+            <div class="content-header">
+                <h2><i class="fas fa-home"></i> Dashboard</h2>
+                <div class="user-info">
+                    <img src="https://ui-avatars.com/api/?name=User&background=2c6fbb&color=fff" alt="User">
+                    <span>Welcome, <span id="username">User</span> (<span id="user-role"></span>)</span>
+                </div>
+            </div>
+            
+            <!-- Dashboard Content -->
+            <div id="dashboard-content" class="content-section active">
+                <div class="stats-grid" id="stats-container">
+                    <!-- Stats will be populated based on user role -->
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-bell"></i> Recent Alerts
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive" id="alerts-container">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Alert Type</th>
+                                        <th>Camera Location</th>
+                                        <th>Date & Time</th>
+                                        <th>Confidence Level</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="alerts-table-body">
+                                    <!-- Alerts will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-images"></i> Recent Images
+                    </div>
+                    <div class="card-body">
+                        <div class="gallery" id="images-container">
+                            <!-- Images will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Disaster Alerts Content -->
+            <div id="disaster-alerts-content" class="content-section">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-bell"></i> Disaster Alerts
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Alert Type</th>
+                                        <th>Location</th>
+                                        <th>Date & Time</th>
+                                        <th>Severity</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="disaster-alerts-table-body">
+                                    <tr>
+                                        <td colspan="5" class="text-center">
+                                            <div class="empty-state">
+                                                <i class="fas fa-bell-slash"></i>
+                                                <p>No disaster alerts found</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Accident Alerts Content -->
+            <div id="accident-alerts-content" class="content-section">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-car-crash"></i> Accident Alerts
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Accident Type</th>
+                                        <th>Location</th>
+                                        <th>Date & Time</th>
+                                        <th>Severity</th>
+                                        <th>Response Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="accident-alerts-table-body">
+                                    <tr>
+                                        <td colspan="5" class="text-center">
+                                            <div class="empty-state">
+                                                <i class="fas fa-car-crash"></i>
+                                                <p>No accident alerts found</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Crime Alerts Content (Police Only) -->
+            <div id="crime-alerts-content" class="content-section">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-shield-alt"></i> Crime Alerts
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Crime Type</th>
+                                        <th>Location</th>
+                                        <th>Date & Time</th>
+                                        <th>Severity</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="crime-alerts-table-body">
+                                    <tr>
+                                        <td colspan="5" class="text-center">
+                                            <div class="empty-state">
+                                                <i class="fas fa-shield-alt"></i>
+                                                <p>No crime alerts found</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Images Content -->
+            <div id="images-content" class="content-section">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-images"></i> All Images
+                    </div>
+                    <div class="card-body">
+                        <div class="gallery" id="all-images-container">
+                            <div class="empty-state" style="grid-column: 1 / -1;">
+                                <i class="fas fa-image"></i>
+                                <p>No images found</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Alert Summary Content -->
+            <div id="alert-summary-content" class="content-section">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-chart-bar"></i> Alert Summary
+                    </div>
+                    <div class="card-body">
+                        <div class="empty-state">
+                            <i class="fas fa-chart-pie"></i>
+                            <p>No alert summary data available</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- User Settings Content -->
+            <div id="user-settings-content" class="content-section">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-user-cog"></i> User Settings
+                    </div>
+                    <div class="card-body">
+                        <div class="settings-group">
+                            <h4><i class="fas fa-user"></i> Profile Information</h4>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Full Name</label>
+                                        <input type="text" class="form-control" id="profile-name" value="John Doe">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Email Address</label>
+                                        <input type="email" class="form-control" id="profile-email" value="john.doe@example.com">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Phone Number</label>
+                                        <input type="tel" class="form-control" id="profile-phone" value="+1 (555) 123-4567">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>User Role</label>
+                                        <input type="text" class="form-control" id="profile-role" value="MDRRMO Officer" disabled>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn btn-primary" id="update-profile">Update Profile</button>
+                        </div>
+                        
+                        <div class="settings-group">
+                            <h4><i class="fas fa-lock"></i> Security</h4>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Current Password</label>
+                                        <input type="password" class="form-control" id="current-password">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>New Password</label>
+                                        <input type="password" class="form-control" id="new-password">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Confirm New Password</label>
+                                        <input type="password" class="form-control" id="confirm-password">
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn btn-primary" id="update-password">Update Password</button>
+                        </div>
+                        
+                        <div class="settings-group">
+                            <h4><i class="fas fa-bell"></i> Notification Preferences</h4>
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="email-notifications" checked>
+                                <label class="form-check-label" for="email-notifications">Email Notifications</label>
+                            </div>
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="sms-notifications" checked>
+                                <label class="form-check-label" for="sms-notifications">SMS Notifications</label>
+                            </div>
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="push-notifications" checked>
+                                <label class="form-check-label" for="push-notifications">Push Notifications</label>
+                            </div>
+                            <button class="btn btn-primary" id="save-preferences">Save Preferences</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Camera Settings Content -->
+            <div id="camera-settings-content" class="content-section">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-camera"></i> Camera Settings
+                    </div>
+                    <div class="card-body">
+                        <div class="empty-state">
+                            <i class="fas fa-camera"></i>
+                            <p>No camera settings available</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- All Alerts Content -->
+            <div id="all-alerts-content" class="content-section">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-bell"></i> All Alerts
+                    </div>
+                    <div class="card-body">
+                        <div class="empty-state">
+                            <i class="fas fa-bell-slash"></i>
+                            <p>No alerts found</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- System Settings Content -->
+            <div id="system-settings-content" class="content-section">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-cog"></i> System Settings
+                    </div>
+                    <div class="card-body">
+                        <div class="empty-state">
+                            <i class="fas fa-cogs"></i>
+                            <p>No system settings available</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Developers Content -->
+            <div id="developers-content" class="content-section">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-info-circle"></i> Development Team
+                    </div>
+                    <div class="card-body">
+                        <div class="developers">
+                            <div class="developer-card">
+                                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80" alt="Developer 1">
+                                <h4>John Smith</h4>
+                                <p><i class="fas fa-code"></i> Lead Developer</p>
+                                <p>AI & Computer Vision Specialist</p>
+                                <div class="social-icons">
+                                    <i class="fab fa-github"></i>
+                                    <i class="fab fa-linkedin"></i>
+                                    <i class="fab fa-twitter"></i>
+                                </div>
+                            </div>
+                            <div class="developer-card">
+                                <img src="https://images.unsplash.com/photo-1552058544-f2b08422138a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80" alt="Developer 2">
+                                <h4>Sarah Johnson</h4>
+                                <p><i class="fas fa-code"></i> Backend Developer</p>
+                                <p>IoT & Embedded Systems Expert</p>
+                                <div class="social-icons">
+                                    <i class="fab fa-github"></i>
+                                    <i class="fab fa-linkedin"></i>
+                                    <i class="fab fa-twitter"></i>
+                                </div>
+                            </div>
+                            <div class="developer-card">
+                                <img src="https://images.unsplash.com/photo-1567532939604-b6b5b0db1604?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80" alt="Developer 3">
+                                <h4>Michael Brown</h4>
+                                <p><i class="fas fa-code"></i> Frontend Developer</p>
+                                <p>UI/UX Design Specialist</p>
+                                <div class="social-icons">
+                                    <i class="fab fa-github"></i>
+                                    <i class="fab fa-linkedin"></i>
+                                    <i class="fab fa-twitter"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // Firebase configuration (unchanged)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCtZNN0pd-0kl4_I8mdXt88i8Bl6zNbYqg",
+            authDomain: "accident-disaster-alert.firebaseapp.com",
+            databaseURL: "https://accident-disaster-alert-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "accident-disaster-alert",
+            storageBucket: "accident-disaster-alert.firebasestorage.app",
+            messagingSenderId: "1012827602100",
+            appId: "1:1012827602100:web:3b243ecf2352f33e9eabe1"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const auth = firebase.auth();
+        const storage = firebase.storage();
+        
+      document.addEventListener('DOMContentLoaded', function() {
+            // Login/Signup Tabs
+            const loginTab = document.getElementById('login-tab');
+            const signupTab = document.getElementById('signup-tab');
+            const loginForm = document.getElementById('login-form');
+            const signupForm = document.getElementById('signup-form');
+            const forgotPasswordForm = document.getElementById('forgot-password-form');
+            const forgotPasswordLink = document.getElementById('forgot-password');
+            const backToLoginLink = document.getElementById('back-to-login');
+            const loginAlert = document.getElementById('login-alert');
+            
+            loginTab.addEventListener('click', function() {
+                loginTab.classList.add('active');
+                signupTab.classList.remove('active');
+                loginForm.style.display = 'block';
+                signupForm.style.display = 'none';
+                forgotPasswordForm.style.display = 'none';
+                loginAlert.style.display = 'none';
+            });
+            
+            signupTab.addEventListener('click', function() {
+                signupTab.classList.add('active');
+                loginTab.classList.remove('active');
+                signupForm.style.display = 'block';
+                loginForm.style.display = 'none';
+                forgotPasswordForm.style.display = 'none';
+                loginAlert.style.display = 'none';
+            });
+            
+            forgotPasswordLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                loginForm.style.display = 'none';
+                signupForm.style.display = 'none';
+                forgotPasswordForm.style.display = 'block';
+                loginAlert.style.display = 'none';
+            });
+            
+            backToLoginLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                forgotPasswordForm.style.display = 'none';
+                loginForm.style.display = 'block';
+                loginAlert.style.display = 'none';
+            });
+            
+            // Menu navigation
+            const menuLinks = document.querySelectorAll('.sidebar-menu a[data-section]');
+            menuLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Update active menu item
+                    menuLinks.forEach(item => item.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Update content header
+                    const contentHeader = document.querySelector('.content-header h2');
+                    const iconClass = this.querySelector('i').className;
+                    const text = this.querySelector('span').textContent;
+                    contentHeader.innerHTML = `<i class="${iconClass}"></i> ${text}`;
+                    
+                    // Show the corresponding content section
+                    const sectionId = this.getAttribute('data-section');
+                    document.querySelectorAll('.content-section').forEach(section => {
+                        section.classList.remove('active');
+                    });
+                    document.getElementById(`${sectionId}-content`).classList.add('active');
+                });
+            });
+            
+            // Login functionality
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                const selectedUserType = document.getElementById('user-type').value;
+                
+                // Firebase authentication
+                auth.signInWithEmailAndPassword(email, password)
+                    .then((userCredential) => {
+                        // Signed in
+                        const user = userCredential.user;
+                        
+                        // Check if user has the correct role
+                        database.ref('users/' + user.uid).once('value').then((snapshot) => {
+                            const userData = snapshot.val();
+                            if (userData) {
+                                const userType = userData.userType;
+                                
+                                if (userType === selectedUserType) {
+                                    // Correct role, allow access
+                                    document.getElementById('app').style.display = 'block';
+                                    document.getElementById('login-container').style.display = 'none';
+                                    
+                                    // Update UI based on user type
+                                    updateUIForUserType(userType);
+                                    
+                                    // Load user data
+                                    loadUserData(user.uid, userType);
+                                    
+                                    // Hide any error message
+                                    loginAlert.style.display = 'none';
+                                } else {
+                                    // Wrong role selected
+                                    loginAlert.textContent = 'Wrong account type selected. Please select ' + userType.toUpperCase() + ' account.';
+                                    loginAlert.style.display = 'block';
+                                    
+                                    // Sign out the user
+                                    auth.signOut();
+                                }
+                            }
+                        });
+                    })
+                    .catch((error) => {
+                        const errorCode = error.code;
+                        const errorMessage = error.message;
+                        loginAlert.textContent = 'Login error: ' + errorMessage;
+                        loginAlert.style.display = 'block';
+                    });
+            });
+            
+            // Signup functionality
+            signupForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const name = document.getElementById('signup-name').value;
+                const email = document.getElementById('signup-email').value;
+                const password = document.getElementById('signup-password').value;
+                const phone = document.getElementById('signup-phone').value;
+                const userType = document.getElementById('signup-user-type').value;
+                
+                // Firebase authentication
+                auth.createUserWithEmailAndPassword(email, password)
+                    .then((userCredential) => {
+                        // Signed up
+                        const user = userCredential.user;
+                        
+                        // Save user data to database
+                        database.ref('users/' + user.uid).set({
+                            name: name,
+                            email: email,
+                            phone: phone,
+                            userType: userType,
+                            createdAt: new Date().toISOString()
+                        });
+                        
+                        document.getElementById('app').style.display = 'block';
+                        document.getElementById('login-container').style.display = 'none';
+                        
+                        // Update UI based on user type
+                        updateUIForUserType(userType);
+                        
+                        // Hide any error message
+                        loginAlert.style.display = 'none';
+                    })
+                    .catch((error) => {
+                        const errorCode = error.code;
+                        const errorMessage = error.message;
+                        loginAlert.textContent = 'Signup error: ' + errorMessage;
+                        loginAlert.style.display = 'block';
+                    });
+            });
+            
+            // Logout functionality
+            document.getElementById('logout-btn').addEventListener('click', function(e) {
+                e.preventDefault();
+                auth.signOut().then(() => {
+                    document.getElementById('app').style.display = 'none';
+                    document.getElementById('login-container').style.display = 'flex';
+                    
+                    // Reset forms
+                    document.getElementById('login-form').reset();
+                    document.getElementById('signup-form').reset();
+                    
+                    // Show login tab by default
+                    loginTab.click();
+                }).catch((error) => {
+                    alert('Logout error: ' + error.message);
+                });
+            });
+            
+            
+            // Load user data from Firebase
+            function loadUserData(userId, userType) {
+                database.ref('users/' + userId).once('value').then((snapshot) => {
+                    const userData = snapshot.val();
+                    if (userData) {
+                        document.getElementById('username').textContent = userData.name;
+                        document.getElementById('user-role').textContent = userType.toUpperCase();
+                        
+                        // Populate user settings form with actual user data
+                        document.getElementById('profile-name').value = userData.name || '';
+                        document.getElementById('profile-email').value = userData.email || '';
+                        document.getElementById('profile-phone').value = userData.phone || '';
+                        
+                        // Set user role display (readonly)
+                        let roleDisplay = '';
+                        switch(userData.userType) {
+                            case 'mdrrmo':
+                                roleDisplay = 'MDRRMO Officer';
+                                break;
+                            case 'police':
+                                roleDisplay = 'Police Officer';
+                                break;
+                            case 'admin':
+                                roleDisplay = 'Administrator';
+                                break;
+                            default:
+                                roleDisplay = userData.userType || 'User';
+                        }
+                        document.getElementById('profile-role').value = roleDisplay;
+                    }
+                });
+                
+                // Load alerts based on user type
+                loadAlerts(userType);
+                
+                // Load images
+                loadImages();
+            }
+            
+            // Update profile functionality
+            document.getElementById('update-profile').addEventListener('click', function() {
+                const userId = auth.currentUser.uid;
+                const name = document.getElementById('profile-name').value;
+                const email = document.getElementById('profile-email').value;
+                const phone = document.getElementById('profile-phone').value;
+                
+                // Update user data in Firebase
+                database.ref('users/' + userId).update({
+                    name: name,
+                    email: email,
+                    phone: phone
+                }).then(() => {
+                    alert('Profile updated successfully!');
+                    document.getElementById('username').textContent = name;
+                }).catch((error) => {
+                    alert('Error updating profile: ' + error.message);
+                });
+            });
+            
+            // Update password functionality
+            document.getElementById('update-password').addEventListener('click', function() {
+                const currentPassword = document.getElementById('current-password').value;
+                const newPassword = document.getElementById('new-password').value;
+                const confirmPassword = document.getElementById('confirm-password').value;
+                
+                if (newPassword !== confirmPassword) {
+                    alert('New passwords do not match!');
+                    return;
+                }
+                
+                const user = auth.currentUser;
+                const credential = firebase.auth.EmailAuthProvider.credential(
+                    user.email, 
+                    currentPassword
+                );
+                
+                // Reauthenticate user
+                user.reauthenticateWithCredential(credential).then(() => {
+                    // Update password
+                    user.updatePassword(newPassword).then(() => {
+                        alert('Password updated successfully!');
+                        // Clear password fields
+                        document.getElementById('current-password').value = '';
+                        document.getElementById('new-password').value = '';
+                        document.getElementById('confirm-password').value = '';
+                    }).catch((error) => {
+                        alert('Error updating password: ' + error.message);
+                    });
+                }).catch((error) => {
+                    alert('Current password is incorrect: ' + error.message);
+                });
+            });
+            
+            // Save notification preferences
+            document.getElementById('save-preferences').addEventListener('click', function() {
+                const userId = auth.currentUser.uid;
+                const emailNotifications = document.getElementById('email-notifications').checked;
+                const smsNotifications = document.getElementById('sms-notifications').checked;
+                const pushNotifications = document.getElementById('push-notifications').checked;
+                
+                // Save preferences to Firebase
+                database.ref('users/' + userId + '/preferences').set({
+                    email: emailNotifications,
+                    sms: smsNotifications,
+                    push: pushNotifications
+                }).then(() => {
+                    alert('Preferences saved successfully!');
+                }).catch((error) => {
+                    alert('Error saving preferences: ' + error.message);
+                });
+            });
+            // Load alerts based on user type
+            function loadAlerts(userType) {
+                const alertsRef = database.ref('alerts');
+                
+                alertsRef.on('value', (snapshot) => {
+                    const alerts = snapshot.val();
+                    const alertsTableBody = document.getElementById('alerts-table-body');
+                    alertsTableBody.innerHTML = '';
+                    
+                    // Update dashboard stats based on user type
+                    updateDashboardStats(userType, alerts);
+                    
+                    if (alerts) {
+                        Object.entries(alerts).forEach(([key, alert]) => {
+                            // Filter based on user type
+                            if (userType === 'police') {
+                                // Police can only see accident and crime alerts
+                                if (alert.type !== 'accident' && alert.type !== 'crime') {
+                                    return;
+                                }
+                            } else if (userType === 'mdrrmo') {
+                                // MDRRMO can see all except crime alerts
+                                if (alert.type === 'crime') {
+                                    return;
+                                }
+                            }
+                            
+                            // Create table row
+                            const row = document.createElement('tr');
+                            
+                            // Add alert type badge
+                            let badgeClass = '';
+                            let badgeIcon = '';
+                            if (alert.type === 'fire') {
+                                badgeClass = 'badge-fire';
+                                badgeIcon = 'fa-fire';
+                            } else if (alert.type === 'flood') {
+                                badgeClass = 'badge-flood';
+                                badgeIcon = 'fa-water';
+                            } else if (alert.type === 'landslide') {
+                                badgeClass = 'badge-landslide';
+                                badgeIcon = 'fa-mountain';
+                            } else if (alert.type === 'accident') {
+                                badgeClass = 'badge-accident';
+                                badgeIcon = 'fa-car-crash';
+                            } else if (alert.type === 'crime') {
+                                badgeClass = 'badge-crime';
+                                badgeIcon = 'fa-shield-alt';
+                            }
+                            
+                            row.innerHTML = `
+                                <td><span class="alert-badge ${badgeClass}"><i class="fas ${badgeIcon}"></i> ${alert.type.toUpperCase()}</span></td>
+                                <td>${alert.location || 'Unknown'}</td>
+                                <td>${new Date(alert.timestamp).toLocaleString()}</td>
+                                <td><span class="badge ${alert.confidence > 0.8 ? 'bg-success' : 'bg-warning'}">${Math.round(alert.confidence * 100)}%</span></td>
+                            `;
+                            
+                            alertsTableBody.appendChild(row);
+                        });
+                    }
+                    
+                    // Show empty state if no alerts
+                    if (alertsTableBody.children.length === 0) {
+                        alertsTableBody.innerHTML = `
+                            <tr>
+                                <td colspan="4" class="text-center">
+                                    <div class="empty-state">
+                                        <i class="fas fa-bell-slash"></i>
+                                        <p>No alerts found</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                });
+            }
+            
+            // Update dashboard stats based on user type
+            function updateDashboardStats(userType, alerts) {
+                const statsContainer = document.getElementById('stats-container');
+                
+                // Reset counters
+                let fireCount = 0, floodCount = 0, landslideCount = 0, accidentCount = 0, crimeCount = 0;
+                
+                if (alerts) {
+                    Object.values(alerts).forEach(alert => {
+                        if (alert.type === 'fire') fireCount++;
+                        if (alert.type === 'flood') floodCount++;
+                        if (alert.type === 'landslide') landslideCount++;
+                        if (alert.type === 'accident') accidentCount++;
+                        if (alert.type === 'crime') crimeCount++;
+                    });
+                }
+                
+                if (userType === 'police') {
+                    // Police dashboard - only accident and crime stats
+                    statsContainer.innerHTML = `
+                        <div class="stat-card accident">
+                            <i class="fas fa-car-crash"></i>
+                            <h3>${accidentCount}</h3>
+                            <p>Accident Detections</p>
+                        </div>
+                        <div class="stat-card crime">
+                            <i class="fas fa-shield-alt"></i>
+                            <h3>${crimeCount}</h3>
+                            <p>Crime Detections</p>
+                        </div>
+                    `;
+                } else {
+                    // MDRRMO and Admin dashboard - all stats except crime
+                    statsContainer.innerHTML = `
+                        <div class="stat-card fire">
+                            <i class="fas fa-fire"></i>
+                            <h3>${fireCount}</h3>
+                            <p>Fire Detections</p>
+                        </div>
+                        <div class="stat-card flood">
+                            <i class="fas fa-water"></i>
+                            <h3>${floodCount}</h3>
+                            <p>Flood Detections</p>
+                        </div>
+                        <div class="stat-card landslide">
+                            <i class="fas fa-mountain"></i>
+                            <h3>${landslideCount}</h3>
+                            <p>Landslide Detections</p>
+                        </div>
+                        <div class="stat-card accident">
+                            <i class="fas fa-car-crash"></i>
+                            <h3>${accidentCount}</h3>
+                            <p>Accident Detections</p>
+                        </div>
+                    `;
+                }
+            }
+            
+            // Load images from Firebase
+            function loadImages() {
+                const imagesRef = database.ref('images');
+                const imagesContainer = document.getElementById('images-container');
+                
+                imagesRef.on('value', (snapshot) => {
+                    const images = snapshot.val();
+                    imagesContainer.innerHTML = '';
+                    
+                    if (images) {
+                        Object.entries(images).forEach(([key, imageData]) => {
+                            const galleryItem = document.createElement('div');
+                            galleryItem.className = 'gallery-item';
+                            
+                            galleryItem.innerHTML = `
+                                <img src="${imageData.url || 'https://picsum.photos/400/300?random=' + Math.floor(Math.random() * 100)}" alt="${imageData.type} detection">
+                                <div class="gallery-info">
+                                    <p><i class="fas fa-${getIconForType(imageData.type)}"></i> ${imageData.type.toUpperCase()} - ${new Date(imageData.timestamp).toLocaleDateString()} - ${imageData.location || 'Unknown'}</p>
+                                </div>
+                            `;
+                            
+                            imagesContainer.appendChild(galleryItem);
+                        });
+                    }
+                    
+                    // Show empty state if no images
+                    if (imagesContainer.children.length === 0) {
+                        imagesContainer.innerHTML = `
+                            <div class="empty-state" style="grid-column: 1 / -1;">
+                                <i class="fas fa-image"></i>
+                                <p>No images found</p>
+                            </div>
+                        `;
+                    }
+                });
+            }
+            
+            // Helper function to get icon for alert type
+            function getIconForType(type) {
+                switch(type) {
+                    case 'fire': return 'fire';
+                    case 'flood': return 'water';
+                    case 'landslide': return 'mountain';
+                    case 'accident': return 'car-crash';
+                    case 'crime': return 'shield-alt';
+                    default: return 'exclamation-triangle';
+                }
+            }
+            
+            // Update UI based on user type
+            function updateUIForUserType(userType) {
+                // Hide all menu items first
+                document.querySelectorAll('.mdrrmo-item, .police-item, .admin-item').forEach(item => {
+                    item.style.display = 'none';
+                });
+                
+                // Show appropriate menu items
+                if (userType === 'mdrrmo') {
+                    document.querySelectorAll('.mdrrmo-item').forEach(item => {
+                        item.style.display = 'list-item';
+                    });
+                } else if (userType === 'police') {
+                    document.querySelectorAll('.police-item').forEach(item => {
+                        item.style.display = 'list-item';
+                    });
+                } else if (userType === 'admin') {
+                    document.querySelectorAll('.admin-item').forEach(item => {
+                        item.style.display = 'list-item';
+                    });
+                }
+            }
+            // Check if user is already logged in
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    // User is signed in
+                    database.ref('users/' + user.uid).once('value').then((snapshot) => {
+                        const userData = snapshot.val();
+                        if (userData) {
+                            document.getElementById('app').style.display = 'block';
+                            document.getElementById('login-container').style.display = 'none';
+                            document.getElementById('username').textContent = userData.name;
+                            document.getElementById('user-role').textContent = userData.userType.toUpperCase();
+                            
+                            // Load user settings data
+                            document.getElementById('profile-name').value = userData.name || '';
+                            document.getElementById('profile-email').value = userData.email || '';
+                            document.getElementById('profile-phone').value = userData.phone || '';
+                            
+                            // Set user role display
+                            let roleDisplay = '';
+                            switch(userData.userType) {
+                                case 'mdrrmo':
+                                    roleDisplay = 'MDRRMO Officer';
+                                    break;
+                                case 'police':
+                                    roleDisplay = 'Police Officer';
+                                    break;
+                                case 'admin':
+                                    roleDisplay = 'Administrator';
+                                    break;
+                                default:
+                                    roleDisplay = userData.userType || 'User';
+                            }
+                            document.getElementById('profile-role').value = roleDisplay;
+                            
+                            // Load notification preferences if they exist
+                            if (userData.preferences) {
+                                document.getElementById('email-notifications').checked = userData.preferences.email || false;
+                                document.getElementById('sms-notifications').checked = userData.preferences.sms || false;
+                                document.getElementById('push-notifications').checked = userData.preferences.push || false;
+                            }
+                            
+                            updateUIForUserType(userData.userType);
+                            loadAlerts(userData.userType);
+                            loadImages();
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
