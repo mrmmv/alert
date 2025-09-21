@@ -6,12 +6,14 @@
     <title>PROJECT ALERT</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
     <style>
-     :root {
+        /* Your existing CSS styles remain unchanged */
+        :root {
             --primary-color: #2c6fbb;
             --secondary-color: #4caf50;
             --accent-color: #ff9800;
@@ -195,6 +197,12 @@
             background-color: #ffebee;
             color: #d32f2f;
             border-left: 4px solid #f44336;
+        }
+        
+        .alert-success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border-left: 4px solid #4caf50;
         }
         
         /* Main application */
@@ -527,16 +535,18 @@
         
         .social-icons {
             margin-top: 15px;
+            display: flex;
+            justify-content: center;
         }
         
-        .social-icons i {
+        .social-icons a {
             margin: 0 8px;
             color: var(--primary-color);
             font-size: 18px;
             transition: color 0.3s;
         }
         
-        .social-icons i:hover {
+        .social-icons a:hover {
             color: var(--accent-color);
         }
         
@@ -622,6 +632,14 @@
             border-color: var(--primary-color);
         }
         
+        /* Chart container */
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+            margin-bottom: 25px;
+        }
+        
         /* Responsive */
         @media (max-width: 992px) {
             #sidebar {
@@ -668,6 +686,10 @@
             
             .user-info {
                 margin-top: 15px;
+            }
+            
+            .chart-container {
+                height: 300px;
             }
         }
     </style>
@@ -749,9 +771,9 @@
                 <p>Enter your email address and we'll send you instructions to reset your password.</p>
                 <div class="form-group">
                     <i class="fas fa-envelope form-icon"></i>
-                    <input type="email" class="form-control" placeholder="Email" required>
+                    <input type="email" class="form-control" id="reset-email" placeholder="Email" required>
                 </div>
-                <button class="btn-login">Reset Password</button>
+                <button type="button" class="btn-login" id="reset-password-btn">Reset Password</button>
                 <div class="login-help">
                     <a href="#" id="back-to-login">Back to login</a>
                 </div>
@@ -868,14 +890,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="disaster-alerts-table-body">
-                                    <tr>
-                                        <td colspan="5" class="text-center">
-                                            <div class="empty-state">
-                                                <i class="fas fa-bell-slash"></i>
-                                                <p>No disaster alerts found</p>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                    <!-- Disaster alerts will be populated here -->
                                 </tbody>
                             </table>
                         </div>
@@ -902,14 +917,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="accident-alerts-table-body">
-                                    <tr>
-                                        <td colspan="5" class="text-center">
-                                            <div class="empty-state">
-                                                <i class="fas fa-car-crash"></i>
-                                                <p>No accident alerts found</p>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                    <!-- Accident alerts will be populated here -->
                                 </tbody>
                             </table>
                         </div>
@@ -936,14 +944,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="crime-alerts-table-body">
-                                    <tr>
-                                        <td colspan="5" class="text-center">
-                                            <div class="empty-state">
-                                                <i class="fas fa-shield-alt"></i>
-                                                <p>No crime alerts found</p>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                    <!-- Crime alerts will be populated here -->
                                 </tbody>
                             </table>
                         </div>
@@ -959,10 +960,7 @@
                     </div>
                     <div class="card-body">
                         <div class="gallery" id="all-images-container">
-                            <div class="empty-state" style="grid-column: 1 / -1;">
-                                <i class="fas fa-image"></i>
-                                <p>No images found</p>
-                            </div>
+                            <!-- All images will be populated here -->
                         </div>
                     </div>
                 </div>
@@ -975,9 +973,8 @@
                         <i class="fas fa-chart-bar"></i> Alert Summary
                     </div>
                     <div class="card-body">
-                        <div class="empty-state">
-                            <i class="fas fa-chart-pie"></i>
-                            <p>No alert summary data available</p>
+                        <div class="chart-container">
+                            <canvas id="alert-summary-chart"></canvas>
                         </div>
                     </div>
                 </div>
@@ -990,6 +987,7 @@
                         <i class="fas fa-user-cog"></i> User Settings
                     </div>
                     <div class="card-body">
+                        <div id="settings-alert" class="alert-message" style="display: none;"></div>
                         <div class="settings-group">
                             <h4><i class="fas fa-user"></i> Profile Information</h4>
                             <div class="row">
@@ -1073,9 +1071,51 @@
                         <i class="fas fa-camera"></i> Camera Settings
                     </div>
                     <div class="card-body">
-                        <div class="empty-state">
-                            <i class="fas fa-camera"></i>
-                            <p>No camera settings available</p>
+                        <div class="settings-group">
+                            <h4><i class="fas fa-camera"></i> Add New Camera</h4>
+                            <form id="camera-form">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label>Camera Name</label>
+                                            <input type="text" class="form-control" id="camera-name" placeholder="Enter camera name" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label>Camera Location</label>
+                                            <input type="text" class="form-control" id="camera-location" placeholder="Enter camera location" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label>Camera Index</label>
+                                            <input type="number" class="form-control" id="camera-index" placeholder="Enter camera index" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Add Camera</button>
+                            </form>
+                        </div>
+                        
+                        <div class="settings-group">
+                            <h4><i class="fas fa-list"></i> Camera List</h4>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Camera Name</th>
+                                            <th>Location</th>
+                                            <th>Index</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="camera-list">
+                                        <!-- Camera list will be populated here -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1088,9 +1128,21 @@
                         <i class="fas fa-bell"></i> All Alerts
                     </div>
                     <div class="card-body">
-                        <div class="empty-state">
-                            <i class="fas fa-bell-slash"></i>
-                            <p>No alerts found</p>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Alert Type</th>
+                                        <th>Location</th>
+                                        <th>Date & Time</th>
+                                        <th>Severity</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="all-alerts-table-body">
+                                    <!-- All alerts will be populated here -->
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -1125,9 +1177,9 @@
                                 <p><i class="fas fa-code"></i> Lead Developer</p>
                                 <p>AI & Computer Vision Specialist</p>
                                 <div class="social-icons">
-                                    <i class="fab fa-github"></i>
-                                    <i class="fab fa-linkedin"></i>
-                                    <i class="fab fa-twitter"></i>
+                                    <a href="#"><i class="fab fa-github"></i></a>
+                                    <a href="#"><i class="fab fa-linkedin"></i></a>
+                                    <a href="#"><i class="fab fa-twitter"></i></a>
                                 </div>
                             </div>
                             <div class="developer-card">
@@ -1136,9 +1188,9 @@
                                 <p><i class="fas fa-code"></i> Backend Developer</p>
                                 <p>IoT & Embedded Systems Expert</p>
                                 <div class="social-icons">
-                                    <i class="fab fa-github"></i>
-                                    <i class="fab fa-linkedin"></i>
-                                    <i class="fab fa-twitter"></i>
+                                    <a href="#"><i class="fab fa-github"></i></a>
+                                    <a href="#"><i class="fab fa-linkedin"></i></a>
+                                    <a href="#"><i class="fab fa-twitter"></i></a>
                                 </div>
                             </div>
                             <div class="developer-card">
@@ -1147,9 +1199,9 @@
                                 <p><i class="fas fa-code"></i> Frontend Developer</p>
                                 <p>UI/UX Design Specialist</p>
                                 <div class="social-icons">
-                                    <i class="fab fa-github"></i>
-                                    <i class="fab fa-linkedin"></i>
-                                    <i class="fab fa-twitter"></i>
+                                    <a href="#"><i class="fab fa-github"></i></a>
+                                    <a href="#"><i class="fab fa-linkedin"></i></a>
+                                    <a href="#"><i class="fab fa-twitter"></i></a>
                                 </div>
                             </div>
                         </div>
@@ -1159,9 +1211,8 @@
         </div>
     </div>
 
-
     <script>
-        // Firebase configuration (unchanged)
+        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyCtZNN0pd-0kl4_I8mdXt88i8Bl6zNbYqg",
             authDomain: "accident-disaster-alert.firebaseapp.com",
@@ -1178,7 +1229,48 @@
         const auth = firebase.auth();
         const storage = firebase.storage();
         
-      document.addEventListener('DOMContentLoaded', function() {
+        // Global variables
+        let currentUserType = '';
+        let alertSummaryChart = null;
+        
+        // Helper function to get user-friendly error messages
+        function getFriendlyErrorMessage(errorCode) {
+            switch(errorCode) {
+                case 'auth/invalid-email':
+                    return 'The email address is not valid.';
+                case 'auth/user-disabled':
+                    return 'This user account has been disabled.';
+                case 'auth/user-not-found':
+                    return 'No account found with this email address.';
+                case 'auth/wrong-password':
+                    return 'Incorrect password. Please try again.';
+                case 'auth/email-already-in-use':
+                    return 'This email address is already in use by another account.';
+                case 'auth/operation-not-allowed':
+                    return 'Email/password accounts are not enabled.';
+                case 'auth/weak-password':
+                    return 'The password is too weak. Please use a stronger password.';
+                case 'auth/requires-recent-login':
+                    return 'Please log in again to change your password.';
+                default:
+                    return 'An unexpected error occurred. Please try again.';
+            }
+        }
+        
+        // Helper function to show alert messages
+        function showAlert(elementId, message, type) {
+            const alertElement = document.getElementById(elementId);
+            alertElement.textContent = message;
+            alertElement.className = `alert-message ${type === 'error' ? 'alert-error' : 'alert-success'}`;
+            alertElement.style.display = 'block';
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                alertElement.style.display = 'none';
+            }, 5000);
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
             // Login/Signup Tabs
             const loginTab = document.getElementById('login-tab');
             const signupTab = document.getElementById('signup-tab');
@@ -1188,6 +1280,7 @@
             const forgotPasswordLink = document.getElementById('forgot-password');
             const backToLoginLink = document.getElementById('back-to-login');
             const loginAlert = document.getElementById('login-alert');
+            const resetPasswordBtn = document.getElementById('reset-password-btn');
             
             loginTab.addEventListener('click', function() {
                 loginTab.classList.add('active');
@@ -1222,6 +1315,27 @@
                 loginAlert.style.display = 'none';
             });
             
+            // Reset password functionality
+            resetPasswordBtn.addEventListener('click', function() {
+                const email = document.getElementById('reset-email').value;
+                if (!email) {
+                    showAlert('login-alert', 'Please enter your email address.', 'error');
+                    return;
+                }
+                
+                auth.sendPasswordResetEmail(email)
+                    .then(() => {
+                        showAlert('login-alert', 'Password reset email sent! Check your inbox.', 'success');
+                        setTimeout(() => {
+                            loginTab.click();
+                        }, 3000);
+                    })
+                    .catch((error) => {
+                        const errorMessage = getFriendlyErrorMessage(error.code);
+                        showAlert('login-alert', errorMessage, 'error');
+                    });
+            });
+            
             // Menu navigation
             const menuLinks = document.querySelectorAll('.sidebar-menu a[data-section]');
             menuLinks.forEach(link => {
@@ -1244,6 +1358,9 @@
                         section.classList.remove('active');
                     });
                     document.getElementById(`${sectionId}-content`).classList.add('active');
+                    
+                    // Load data for the specific section
+                    loadSectionData(sectionId, currentUserType);
                 });
             });
             
@@ -1271,6 +1388,9 @@
                                     document.getElementById('app').style.display = 'block';
                                     document.getElementById('login-container').style.display = 'none';
                                     
+                                    // Store current user type
+                                    currentUserType = userType;
+                                    
                                     // Update UI based on user type
                                     updateUIForUserType(userType);
                                     
@@ -1281,8 +1401,7 @@
                                     loginAlert.style.display = 'none';
                                 } else {
                                     // Wrong role selected
-                                    loginAlert.textContent = 'Wrong account type selected. Please select ' + userType.toUpperCase() + ' account.';
-                                    loginAlert.style.display = 'block';
+                                    showAlert('login-alert', 'Wrong account type selected. Please select ' + userType.toUpperCase() + ' account.', 'error');
                                     
                                     // Sign out the user
                                     auth.signOut();
@@ -1291,10 +1410,8 @@
                         });
                     })
                     .catch((error) => {
-                        const errorCode = error.code;
-                        const errorMessage = error.message;
-                        loginAlert.textContent = 'Login error: ' + errorMessage;
-                        loginAlert.style.display = 'block';
+                        const errorMessage = getFriendlyErrorMessage(error.code);
+                        showAlert('login-alert', errorMessage, 'error');
                     });
             });
             
@@ -1325,17 +1442,21 @@
                         document.getElementById('app').style.display = 'block';
                         document.getElementById('login-container').style.display = 'none';
                         
+                        // Store current user type
+                        currentUserType = userType;
+                        
                         // Update UI based on user type
                         updateUIForUserType(userType);
+                        
+                        // Load user data
+                        loadUserData(user.uid, userType);
                         
                         // Hide any error message
                         loginAlert.style.display = 'none';
                     })
                     .catch((error) => {
-                        const errorCode = error.code;
-                        const errorMessage = error.message;
-                        loginAlert.textContent = 'Signup error: ' + errorMessage;
-                        loginAlert.style.display = 'block';
+                        const errorMessage = getFriendlyErrorMessage(error.code);
+                        showAlert('login-alert', errorMessage, 'error');
                     });
             });
             
@@ -1357,6 +1478,30 @@
                 });
             });
             
+            // Camera form submission
+            document.getElementById('camera-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const cameraName = document.getElementById('camera-name').value;
+                const cameraLocation = document.getElementById('camera-location').value;
+                const cameraIndex = document.getElementById('camera-index').value;
+                
+                // Save camera data to Firebase
+                const newCameraRef = database.ref('cameras').push();
+                newCameraRef.set({
+                    name: cameraName,
+                    location: cameraLocation,
+                    index: cameraIndex,
+                    status: 'active',
+                    createdAt: new Date().toISOString()
+                }).then(() => {
+                    alert('Camera added successfully!');
+                    document.getElementById('camera-form').reset();
+                    loadCameras(); // Reload the camera list
+                }).catch((error) => {
+                    alert('Error adding camera: ' + error.message);
+                });
+            });
             
             // Load user data from Firebase
             function loadUserData(userId, userType) {
@@ -1387,6 +1532,13 @@
                                 roleDisplay = userData.userType || 'User';
                         }
                         document.getElementById('profile-role').value = roleDisplay;
+                        
+                        // Load notification preferences if they exist
+                        if (userData.preferences) {
+                            document.getElementById('email-notifications').checked = userData.preferences.email || false;
+                            document.getElementById('sms-notifications').checked = userData.preferences.sms || false;
+                            document.getElementById('push-notifications').checked = userData.preferences.push || false;
+                        }
                     }
                 });
                 
@@ -1395,6 +1547,11 @@
                 
                 // Load images
                 loadImages();
+                
+                // Load cameras if admin
+                if (userType === 'admin') {
+                    loadCameras();
+                }
             }
             
             // Update profile functionality
@@ -1410,10 +1567,10 @@
                     email: email,
                     phone: phone
                 }).then(() => {
-                    alert('Profile updated successfully!');
+                    showAlert('settings-alert', 'Profile updated successfully!', 'success');
                     document.getElementById('username').textContent = name;
                 }).catch((error) => {
-                    alert('Error updating profile: ' + error.message);
+                    showAlert('settings-alert', 'Error updating profile: ' + error.message, 'error');
                 });
             });
             
@@ -1423,8 +1580,18 @@
                 const newPassword = document.getElementById('new-password').value;
                 const confirmPassword = document.getElementById('confirm-password').value;
                 
+                if (!currentPassword || !newPassword || !confirmPassword) {
+                    showAlert('settings-alert', 'Please fill in all password fields.', 'error');
+                    return;
+                }
+                
                 if (newPassword !== confirmPassword) {
-                    alert('New passwords do not match!');
+                    showAlert('settings-alert', 'New passwords do not match!', 'error');
+                    return;
+                }
+                
+                if (newPassword.length < 6) {
+                    showAlert('settings-alert', 'Password should be at least 6 characters.', 'error');
                     return;
                 }
                 
@@ -1438,16 +1605,16 @@
                 user.reauthenticateWithCredential(credential).then(() => {
                     // Update password
                     user.updatePassword(newPassword).then(() => {
-                        alert('Password updated successfully!');
+                        showAlert('settings-alert', 'Password updated successfully!', 'success');
                         // Clear password fields
                         document.getElementById('current-password').value = '';
                         document.getElementById('new-password').value = '';
                         document.getElementById('confirm-password').value = '';
                     }).catch((error) => {
-                        alert('Error updating password: ' + error.message);
+                        showAlert('settings-alert', 'Error updating password: ' + error.message, 'error');
                     });
                 }).catch((error) => {
-                    alert('Current password is incorrect: ' + error.message);
+                    showAlert('settings-alert', 'Current password is incorrect: ' + error.message, 'error');
                 });
             });
             
@@ -1464,11 +1631,12 @@
                     sms: smsNotifications,
                     push: pushNotifications
                 }).then(() => {
-                    alert('Preferences saved successfully!');
+                    showAlert('settings-alert', 'Preferences saved successfully!', 'success');
                 }).catch((error) => {
-                    alert('Error saving preferences: ' + error.message);
+                    showAlert('settings-alert', 'Error saving preferences: ' + error.message, 'error');
                 });
             });
+            
             // Load alerts based on user type
             function loadAlerts(userType) {
                 const alertsRef = database.ref('alerts');
@@ -1483,16 +1651,18 @@
                     
                     if (alerts) {
                         Object.entries(alerts).forEach(([key, alert]) => {
-                            // Filter based on user type
-                            if (userType === 'police') {
-                                // Police can only see accident and crime alerts
-                                if (alert.type !== 'accident' && alert.type !== 'crime') {
-                                    return;
-                                }
-                            } else if (userType === 'mdrrmo') {
-                                // MDRRMO can see all except crime alerts
-                                if (alert.type === 'crime') {
-                                    return;
+                            // Admin can see all alerts
+                            if (userType !== 'admin') {
+                                if (userType === 'police') {
+                                    // Police can only see accident and crime alerts
+                                    if (alert.type !== 'accident' && alert.type !== 'crime') {
+                                        return;
+                                    }
+                                } else if (userType === 'mdrrmo') {
+                                    // MDRRMO can see all except crime alerts
+                                    if (alert.type === 'crime') {
+                                        return;
+                                    }
                                 }
                             }
                             
@@ -1502,28 +1672,45 @@
                             // Add alert type badge
                             let badgeClass = '';
                             let badgeIcon = '';
-                            if (alert.type === 'fire') {
+                            const alertType = alert.type || 'unknown';
+                            if (alertType === 'fire') {
                                 badgeClass = 'badge-fire';
                                 badgeIcon = 'fa-fire';
-                            } else if (alert.type === 'flood') {
+                            } else if (alertType === 'flood') {
                                 badgeClass = 'badge-flood';
                                 badgeIcon = 'fa-water';
-                            } else if (alert.type === 'landslide') {
+                            } else if (alertType === 'landslide') {
                                 badgeClass = 'badge-landslide';
                                 badgeIcon = 'fa-mountain';
-                            } else if (alert.type === 'accident') {
+                            } else if (alertType === 'accident') {
                                 badgeClass = 'badge-accident';
                                 badgeIcon = 'fa-car-crash';
-                            } else if (alert.type === 'crime') {
+                            } else if (alertType === 'crime') {
                                 badgeClass = 'badge-crime';
                                 badgeIcon = 'fa-shield-alt';
+                            } else {
+                                badgeClass = 'badge-secondary';
+                                badgeIcon = 'fa-exclamation-triangle';
+                            }
+                            
+                            // Format the date - use the timestamp if available, otherwise use the key (if it's a Firebase push ID) or current date
+                            let date = new Date();
+                            if (alert.timestamp) {
+                                date = new Date(alert.timestamp);
+                            } else {
+                                // Try to extract timestamp from Firebase push ID
+                                // Firebase push IDs contain a timestamp in the first 8 characters
+                                const pushIdTimestamp = parseInt(key.substring(0, 8), 36);
+                                if (!isNaN(pushIdTimestamp)) {
+                                    date = new Date(pushIdTimestamp);
+                                }
                             }
                             
                             row.innerHTML = `
-                                <td><span class="alert-badge ${badgeClass}"><i class="fas ${badgeIcon}"></i> ${alert.type.toUpperCase()}</span></td>
+                                <td><span class="alert-badge ${badgeClass}"><i class="fas ${badgeIcon}"></i> ${alertType.toUpperCase()}</span></td>
                                 <td>${alert.location || 'Unknown'}</td>
-                                <td>${new Date(alert.timestamp).toLocaleString()}</td>
-                                <td><span class="badge ${alert.confidence > 0.8 ? 'bg-success' : 'bg-warning'}">${Math.round(alert.confidence * 100)}%</span></td>
+                                <td>${date.toLocaleString()}</td>
+                                <td><span class="badge ${alert.confidence > 0.8 ? 'bg-success' : 'bg-warning'}">${Math.round((alert.confidence || 0) * 100)}%</span></td>
                             `;
                             
                             alertsTableBody.appendChild(row);
@@ -1546,6 +1733,534 @@
                 });
             }
             
+            // Load section-specific data
+            function loadSectionData(sectionId, userType) {
+                const alertsRef = database.ref('alerts');
+                
+                alertsRef.once('value').then((snapshot) => {
+                    const alerts = snapshot.val();
+                    
+                    switch(sectionId) {
+                        case 'disaster-alerts':
+                            loadDisasterAlerts(alerts, userType);
+                            break;
+                        case 'accident-alerts':
+                            loadAccidentAlerts(alerts, userType);
+                            break;
+                        case 'crime-alerts':
+                            loadCrimeAlerts(alerts, userType);
+                            break;
+                        case 'images':
+                            loadAllImages(alerts, userType);
+                            break;
+                        case 'all-alerts':
+                            loadAllAlerts(alerts, userType);
+                            break;
+                        case 'alert-summary':
+                            loadAlertSummary(alerts, userType);
+                            break;
+                        case 'camera-settings':
+                            loadCameras();
+                            break;
+                        default:
+                            // Do nothing for other sections
+                            break;
+                    }
+                });
+            }
+            
+            // Load alert summary with pie chart
+            function loadAlertSummary(alerts, userType) {
+                // Count alerts by type
+                let fireCount = 0, floodCount = 0, landslideCount = 0, accidentCount = 0, crimeCount = 0;
+                
+                if (alerts) {
+                    Object.values(alerts).forEach(alert => {
+                        const type = alert.type || 'unknown';
+                        if (type === 'fire') fireCount++;
+                        if (type === 'flood') floodCount++;
+                        if (type === 'landslide') landslideCount++;
+                        if (type === 'accident') accidentCount++;
+                        if (type === 'crime') crimeCount++;
+                    });
+                }
+                
+                // Filter data based on user type
+                let labels = [];
+                let data = [];
+                let backgroundColors = [];
+                
+                if (userType === 'police') {
+                    labels = ['Accident', 'Crime'];
+                    data = [accidentCount, crimeCount];
+                    backgroundColors = ['#9c27b0', '#673ab7'];
+                } else if (userType === 'mdrrmo') {
+                    labels = ['Fire', 'Flood', 'Landslide', 'Accident'];
+                    data = [fireCount, floodCount, landslideCount, accidentCount];
+                    backgroundColors = ['#f44336', '#2196f3', '#ff9800', '#9c27b0'];
+                } else if (userType === 'admin') {
+                    labels = ['Fire', 'Flood', 'Landslide', 'Accident', 'Crime'];
+                    data = [fireCount, floodCount, landslideCount, accidentCount, crimeCount];
+                    backgroundColors = ['#f44336', '#2196f3', '#ff9800', '#9c27b0', '#673ab7'];
+                }
+                
+                // Get the chart canvas
+                const ctx = document.getElementById('alert-summary-chart').getContext('2d');
+                
+                // Destroy previous chart if it exists
+                if (alertSummaryChart) {
+                    alertSummaryChart.destroy();
+                }
+                
+                // Create new chart
+                alertSummaryChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: backgroundColors,
+                            borderColor: '#fff',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font: {
+                                        size: 14
+                                    },
+                                    padding: 20
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Alert Distribution by Type',
+                                font: {
+                                    size: 18
+                                },
+                                padding: {
+                                    top: 10,
+                                    bottom: 30
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.raw || 0;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = Math.round((value / total) * 100);
+                                        return `${label}: ${value} (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Load disaster alerts
+            function loadDisasterAlerts(alerts, userType) {
+                const tableBody = document.getElementById('disaster-alerts-table-body');
+                tableBody.innerHTML = '';
+                
+                if (alerts) {
+                    Object.entries(alerts).forEach(([key, alert]) => {
+                        // Filter for disaster alerts only (fire, flood, landslide)
+                        if (alert.type !== 'fire' && alert.type !== 'flood' && alert.type !== 'landslide') {
+                            return;
+                        }
+                        
+                        // Format the date
+                        let date = new Date();
+                        if (alert.timestamp) {
+                            date = new Date(alert.timestamp);
+                        } else {
+                            const pushIdTimestamp = parseInt(key.substring(0, 8), 36);
+                            if (!isNaN(pushIdTimestamp)) {
+                                date = new Date(pushIdTimestamp);
+                            }
+                        }
+                        
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td><span class="alert-badge ${'badge-' + alert.type}"><i class="fas ${getIconForType(alert.type)}"></i> ${alert.type.toUpperCase()}</span></td>
+                            <td>${alert.location || 'Unknown'}</td>
+                            <td>${date.toLocaleString()}</td>
+                            <td><span class="badge ${alert.confidence > 0.8 ? 'bg-success' : 'bg-warning'}">${Math.round((alert.confidence || 0) * 100)}%</span></td>
+                            <td><span class="badge bg-info">Pending</span></td>
+                        `;
+                        
+                        tableBody.appendChild(row);
+                    });
+                }
+                
+                // Show empty state if no alerts
+                if (tableBody.children.length === 0) {
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="5" class="text-center">
+                                <div class="empty-state">
+                                    <i class="fas fa-bell-slash"></i>
+                                    <p>No disaster alerts found</p>
+                                </td>
+                            </tr>
+                        `;
+                }
+            }
+            
+            // Load accident alerts
+            function loadAccidentAlerts(alerts, userType) {
+                const tableBody = document.getElementById('accident-alerts-table-body');
+                tableBody.innerHTML = '';
+                
+                if (alerts) {
+                    Object.entries(alerts).forEach(([key, alert]) => {
+                        // Filter for accident alerts only
+                        if (alert.type !== 'accident') {
+                            return;
+                        }
+                        
+                        // Format the date
+                        let date = new Date();
+                        if (alert.timestamp) {
+                            date = new Date(alert.timestamp);
+                        } else {
+                            const pushIdTimestamp = parseInt(key.substring(0, 8), 36);
+                            if (!isNaN(pushIdTimestamp)) {
+                                date = new Date(pushIdTimestamp);
+                            }
+                        }
+                        
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td><span class="alert-badge badge-accident"><i class="fas fa-car-crash"></i> ACCIDENT</span></td>
+                            <td>${alert.location || 'Unknown'}</td>
+                            <td>${date.toLocaleString()}</td>
+                            <td><span class="badge ${alert.confidence > 0.8 ? 'bg-success' : 'bg-warning'}">${Math.round((alert.confidence || 0) * 100)}%</span></td>
+                            <td><span class="badge bg-info">Pending</span></td>
+                        `;
+                        
+                        tableBody.appendChild(row);
+                    });
+                }
+                
+                // Show empty state if no alerts
+                if (tableBody.children.length === 0) {
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="5" class="text-center">
+                                <div class="empty-state">
+                                    <i class="fas fa-car-crash"></i>
+                                    <p>No accident alerts found</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }
+            }
+            
+            // Load crime alerts
+            function loadCrimeAlerts(alerts, userType) {
+                const tableBody = document.getElementById('crime-alerts-table-body');
+                tableBody.innerHTML = '';
+                
+                if (alerts) {
+                    Object.entries(alerts).forEach(([key, alert]) => {
+                        // Filter for crime alerts only
+                        if (alert.type !== 'crime') {
+                            return;
+                        }
+                        
+                        // Format the date
+                        let date = new Date();
+                        if (alert.timestamp) {
+                            date = new Date(alert.timestamp);
+                        } else {
+                            const pushIdTimestamp = parseInt(key.substring(0, 8), 36);
+                            if (!isNaN(pushIdTimestamp)) {
+                                date = new Date(pushIdTimestamp);
+                            }
+                        }
+                        
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td><span class="alert-badge badge-crime"><i class="fas fa-shield-alt"></i> CRIME</span></td>
+                            <td>${alert.location || 'Unknown'}</td>
+                            <td>${date.toLocaleString()}</td>
+                            <td><span class="badge ${alert.confidence > 0.8 ? 'bg-success' : 'bg-warning'}">${Math.round((alert.confidence || 0) * 100)}%</span></td>
+                            <td><span class="badge bg-info">Pending</span></td>
+                        `;
+                        
+                        tableBody.appendChild(row);
+                    });
+                }
+                
+                // Show empty state if no alerts
+                if (tableBody.children.length === 0) {
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="5" class="text-center">
+                                <div class="empty-state">
+                                    <i class="fas fa-shield-alt"></i>
+                                    <p>No crime alerts found</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }
+            }
+            
+            // Load all images with role-based filtering
+            function loadAllImages(alerts, userType) {
+                const imagesContainer = document.getElementById('all-images-container');
+                imagesContainer.innerHTML = '';
+                
+                if (alerts) {
+                    Object.entries(alerts).forEach(([key, alertData]) => {
+                        if (!alertData.imageBase64) return; // Skip if no image
+                        
+                        // Admin can see all images
+                        if (userType !== 'admin') {
+                            if (userType === 'police') {
+                                // Police can only see accident and crime images
+                                if (alertData.type !== 'accident' && alertData.type !== 'crime') {
+                                    return;
+                                }
+                            } else if (userType === 'mdrrmo') {
+                                // MDRRMO can see all except crime images
+                                if (alertData.type === 'crime') {
+                                    return;
+                                }
+                            }
+                        }
+                        
+                        const galleryItem = document.createElement('div');
+                        galleryItem.className = 'gallery-item';
+                        
+                        // Format the date
+                        let date = new Date();
+                        if (alertData.timestamp) {
+                            date = new Date(alertData.timestamp);
+                        } else {
+                            const pushIdTimestamp = parseInt(key.substring(0, 8), 36);
+                            if (!isNaN(pushIdTimestamp)) {
+                                date = new Date(pushIdTimestamp);
+                            }
+                        }
+                        
+                        galleryItem.innerHTML = `
+                            <img src="data:image/jpeg;base64,${alertData.imageBase64}" alt="${alertData.type || 'unknown'} detection">
+                            <div class="gallery-info">
+                                <p><i class="fas fa-${getIconForType(alertData.type)}"></i> ${(alertData.type || 'unknown').toUpperCase()} - ${date.toLocaleDateString()} - ${alertData.location || 'Unknown'}</p>
+                            </div>
+                        `;
+                        
+                        imagesContainer.appendChild(galleryItem);
+                    });
+                }
+                
+                // Show empty state if no images
+                if (imagesContainer.children.length === 0) {
+                    imagesContainer.innerHTML = `
+                        <div class="empty-state" style="grid-column: 1 / -1;">
+                            <i class="fas fa-image"></i>
+                            <p>No images found</p>
+                        </div>
+                    `;
+                }
+            }
+            
+            // Load all alerts for admin
+            function loadAllAlerts(alerts, userType) {
+                const tableBody = document.getElementById('all-alerts-table-body');
+                tableBody.innerHTML = '';
+                
+                if (alerts) {
+                    Object.entries(alerts).forEach(([key, alert]) => {
+                        // Format the date
+                        let date = new Date();
+                        if (alert.timestamp) {
+                            date = new Date(alert.timestamp);
+                        } else {
+                            const pushIdTimestamp = parseInt(key.substring(0, 8), 36);
+                            if (!isNaN(pushIdTimestamp)) {
+                                date = new Date(pushIdTimestamp);
+                            }
+                        }
+                        
+                        // Add alert type badge
+                        let badgeClass = '';
+                        let badgeIcon = '';
+                        const alertType = alert.type || 'unknown';
+                        if (alertType === 'fire') {
+                            badgeClass = 'badge-fire';
+                            badgeIcon = 'fa-fire';
+                        } else if (alertType === 'flood') {
+                            badgeClass = 'badge-flood';
+                            badgeIcon = 'fa-water';
+                        } else if (alertType === 'landslide') {
+                            badgeClass = 'badge-landslide';
+                            badgeIcon = 'fa-mountain';
+                        } else if (alertType === 'accident') {
+                            badgeClass = 'badge-accident';
+                            badgeIcon = 'fa-car-crash';
+                        } else if (alertType === 'crime') {
+                            badgeClass = 'badge-crime';
+                            badgeIcon = 'fa-shield-alt';
+                        } else {
+                            badgeClass = 'badge-secondary';
+                            badgeIcon = 'fa-exclamation-triangle';
+                        }
+                        
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td><span class="alert-badge ${badgeClass}"><i class="fas ${badgeIcon}"></i> ${alertType.toUpperCase()}</span></td>
+                            <td>${alert.location || 'Unknown'}</td>
+                            <td>${date.toLocaleString()}</td>
+                            <td><span class="badge ${alert.confidence > 0.8 ? 'bg-success' : 'bg-warning'}">${Math.round((alert.confidence || 0) * 100)}%</span></td>
+                            <td><span class="badge bg-info">Pending</span></td>
+                        `;
+                        
+                        tableBody.appendChild(row);
+                    });
+                }
+                
+                // Show empty state if no alerts
+                if (tableBody.children.length === 0) {
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="5" class="text-center">
+                                <div class="empty-state">
+                                    <i class="fas fa-bell-slash"></i>
+                                    <p>No alerts found</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }
+            }
+            
+            // Load cameras from Firebase
+            function loadCameras() {
+                const camerasRef = database.ref('cameras');
+                const cameraList = document.getElementById('camera-list');
+                
+                camerasRef.on('value', (snapshot) => {
+                    const cameras = snapshot.val();
+                    cameraList.innerHTML = '';
+                    
+                    if (cameras) {
+                        Object.entries(cameras).forEach(([key, camera]) => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${camera.name}</td>
+                                <td>${camera.location}</td>
+                                <td>${camera.index}</td>
+                                <td><span class="badge ${camera.status === 'active' ? 'bg-success' : 'bg-danger'}">${camera.status}</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary edit-camera" data-id="${key}">Edit</button>
+                                    <button class="btn btn-sm btn-danger delete-camera" data-id="${key}">Delete</button>
+                                </td>
+                            `;
+                            
+                            cameraList.appendChild(row);
+                        });
+                        
+                        // Add event listeners to edit and delete buttons
+                        document.querySelectorAll('.edit-camera').forEach(button => {
+                            button.addEventListener('click', function() {
+                                const cameraId = this.getAttribute('data-id');
+                                editCamera(cameraId);
+                            });
+                        });
+                        
+                        document.querySelectorAll('.delete-camera').forEach(button => {
+                            button.addEventListener('click', function() {
+                                const cameraId = this.getAttribute('data-id');
+                                deleteCamera(cameraId);
+                            });
+                        });
+                    }
+                    
+                    // Show empty state if no cameras
+                    if (cameraList.children.length === 0) {
+                        cameraList.innerHTML = `
+                            <tr>
+                                <td colspan="5" class="text-center">
+                                    <div class="empty-state">
+                                        <i class="fas fa-camera"></i>
+                                        <p>No cameras found</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                });
+            }
+            
+            // Edit camera function
+            function editCamera(cameraId) {
+                // Get camera data from Firebase
+                database.ref('cameras/' + cameraId).once('value').then((snapshot) => {
+                    const camera = snapshot.val();
+                    
+                    // Populate form with camera data
+                    document.getElementById('camera-name').value = camera.name;
+                    document.getElementById('camera-location').value = camera.location;
+                    document.getElementById('camera-index').value = camera.index;
+                    
+                    // Change form to update mode
+                    const form = document.getElementById('camera-form');
+                    const submitButton = form.querySelector('button[type="submit"]');
+                    
+                    // Store the camera ID for update
+                    form.setAttribute('data-edit-id', cameraId);
+                    submitButton.textContent = 'Update Camera';
+                    
+                    // Remove previous event listener and add update listener
+                    form.onsubmit = function(e) {
+                        e.preventDefault();
+                        
+                        const cameraName = document.getElementById('camera-name').value;
+                        const cameraLocation = document.getElementById('camera-location').value;
+                        const cameraIndex = document.getElementById('camera-index').value;
+                        
+                        // Update camera data in Firebase
+                        database.ref('cameras/' + cameraId).update({
+                            name: cameraName,
+                            location: cameraLocation,
+                            index: cameraIndex
+                        }).then(() => {
+                            alert('Camera updated successfully!');
+                            form.reset();
+                            form.removeAttribute('data-edit-id');
+                            submitButton.textContent = 'Add Camera';
+                            loadCameras(); // Reload the camera list
+                        }).catch((error) => {
+                            alert('Error updating camera: ' + error.message);
+                        });
+                    };
+                });
+            }
+            
+            // Delete camera function
+            function deleteCamera(cameraId) {
+                if (confirm('Are you sure you want to delete this camera?')) {
+                    database.ref('cameras/' + cameraId).remove().then(() => {
+                        alert('Camera deleted successfully!');
+                        loadCameras(); // Reload the camera list
+                    }).catch((error) => {
+                        alert('Error deleting camera: ' + error.message);
+                    });
+                }
+            }
+            
             // Update dashboard stats based on user type
             function updateDashboardStats(userType, alerts) {
                 const statsContainer = document.getElementById('stats-container');
@@ -1555,11 +2270,12 @@
                 
                 if (alerts) {
                     Object.values(alerts).forEach(alert => {
-                        if (alert.type === 'fire') fireCount++;
-                        if (alert.type === 'flood') floodCount++;
-                        if (alert.type === 'landslide') landslideCount++;
-                        if (alert.type === 'accident') accidentCount++;
-                        if (alert.type === 'crime') crimeCount++;
+                        const type = alert.type || 'unknown';
+                        if (type === 'fire') fireCount++;
+                        if (type === 'flood') floodCount++;
+                        if (type === 'landslide') landslideCount++;
+                        if (type === 'accident') accidentCount++;
+                        if (type === 'crime') crimeCount++;
                     });
                 }
                 
@@ -1577,8 +2293,37 @@
                             <p>Crime Detections</p>
                         </div>
                     `;
+                } else if (userType === 'admin') {
+                    // Admin dashboard - all stats
+                    statsContainer.innerHTML = `
+                        <div class="stat-card fire">
+                            <i class="fas fa-fire"></i>
+                            <h3>${fireCount}</h3>
+                            <p>Fire Detections</p>
+                        </div>
+                        <div class="stat-card flood">
+                            <i class="fas fa-water"></i>
+                            <h3>${floodCount}</h3>
+                            <p>Flood Detections</p>
+                        </div>
+                        <div class="stat-card landslide">
+                            <i class="fas fa-mountain"></i>
+                            <h3>${landslideCount}</h3>
+                            <p>Landslide Detections</p>
+                        </div>
+                        <div class="stat-card accident">
+                            <i class="fas fa-car-crash"></i>
+                            <h3>${accidentCount}</h3>
+                            <p>Accident Detections</p>
+                        </div>
+                        <div class="stat-card crime">
+                            <i class="fas fa-shield-alt"></i>
+                            <h3>${crimeCount}</h3>
+                            <p>Crime Detections</p>
+                        </div>
+                    `;
                 } else {
-                    // MDRRMO and Admin dashboard - all stats except crime
+                    // MDRRMO dashboard - all stats except crime
                     statsContainer.innerHTML = `
                         <div class="stat-card fire">
                             <i class="fas fa-fire"></i>
@@ -1606,22 +2351,50 @@
             
             // Load images from Firebase
             function loadImages() {
-                const imagesRef = database.ref('images');
+                const alertsRef = database.ref('alerts');
                 const imagesContainer = document.getElementById('images-container');
                 
-                imagesRef.on('value', (snapshot) => {
-                    const images = snapshot.val();
+                alertsRef.on('value', (snapshot) => {
+                    const alerts = snapshot.val();
                     imagesContainer.innerHTML = '';
                     
-                    if (images) {
-                        Object.entries(images).forEach(([key, imageData]) => {
+                    if (alerts) {
+                        Object.entries(alerts).forEach(([key, alertData]) => {
+                            if (!alertData.imageBase64) return; // Skip if no image
+                            
+                            // Admin can see all images
+                            if (currentUserType !== 'admin') {
+                                if (currentUserType === 'police') {
+                                    // Police can only see accident and crime images
+                                    if (alertData.type !== 'accident' && alertData.type !== 'crime') {
+                                        return;
+                                    }
+                                } else if (currentUserType === 'mdrrmo') {
+                                    // MDRRMO can see all except crime images
+                                    if (alertData.type === 'crime') {
+                                        return;
+                                    }
+                                }
+                            }
+                            
                             const galleryItem = document.createElement('div');
                             galleryItem.className = 'gallery-item';
                             
+                            // Format the date
+                            let date = new Date();
+                            if (alertData.timestamp) {
+                                date = new Date(alertData.timestamp);
+                            } else {
+                                const pushIdTimestamp = parseInt(key.substring(0, 8), 36);
+                                if (!isNaN(pushIdTimestamp)) {
+                                    date = new Date(pushIdTimestamp);
+                                }
+                            }
+                            
                             galleryItem.innerHTML = `
-                                <img src="${imageData.url || 'https://picsum.photos/400/300?random=' + Math.floor(Math.random() * 100)}" alt="${imageData.type} detection">
+                                <img src="data:image/jpeg;base64,${alertData.imageBase64}" alt="${alertData.type || 'unknown'} detection">
                                 <div class="gallery-info">
-                                    <p><i class="fas fa-${getIconForType(imageData.type)}"></i> ${imageData.type.toUpperCase()} - ${new Date(imageData.timestamp).toLocaleDateString()} - ${imageData.location || 'Unknown'}</p>
+                                    <p><i class="fas fa-${getIconForType(alertData.type)}"></i> ${(alertData.type || 'unknown').toUpperCase()} - ${date.toLocaleDateString()} - ${alertData.location || 'Unknown'}</p>
                                 </div>
                             `;
                             
@@ -1675,6 +2448,7 @@
                     });
                 }
             }
+            
             // Check if user is already logged in
             auth.onAuthStateChanged((user) => {
                 if (user) {
@@ -1686,6 +2460,9 @@
                             document.getElementById('login-container').style.display = 'none';
                             document.getElementById('username').textContent = userData.name;
                             document.getElementById('user-role').textContent = userData.userType.toUpperCase();
+                            
+                            // Store current user type
+                            currentUserType = userData.userType;
                             
                             // Load user settings data
                             document.getElementById('profile-name').value = userData.name || '';
@@ -1719,6 +2496,11 @@
                             updateUIForUserType(userData.userType);
                             loadAlerts(userData.userType);
                             loadImages();
+                            
+                            // Load cameras if admin
+                            if (userData.userType === 'admin') {
+                                loadCameras();
+                            }
                         }
                     });
                 }
